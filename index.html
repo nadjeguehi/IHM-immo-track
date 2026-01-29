@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyCézâme x IHM - Pilotage Prestige</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        
+        :root {
+            --vert-sapin: #1a3a32;
+            --ivoire: #fdfcf0;
+            --dore: #c5a059;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--ivoire);
+            color: var(--vert-sapin);
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+        .bg-sapin { background-color: var(--vert-sapin); }
+        .text-dore { color: var(--dore); }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Sliders Custom */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: var(--dore);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .land { fill: white; stroke: #cbd5e1; stroke-width: 0.8; transition: all 0.5s ease; }
+        .city-dot { transition: all 0.3s ease; cursor: pointer; }
+        .city-dot:hover { r: 10; stroke: white; stroke-width: 3; }
+        
+        .lang-btn.active { background: var(--dore); color: white; }
+
+        .tooltip {
+            position: absolute;
+            background: var(--vert-sapin);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            font-size: 11px;
+            border: 1px solid var(--dore);
+        }
+
+        .logo-container {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border-bottom: 4px solid var(--dore);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <div class="flex flex-col min-h-screen">
+        
+        <!-- HEADER TOP INFO -->
+        <div class="bg-sapin text-[10px] text-white/40 py-2 border-b border-white/5 px-8 flex justify-between items-center">
+            <span class="uppercase tracking-[0.3em] font-bold">IHM IMMO • MyCézâme Solutions v12.0</span>
+            <div class="flex gap-4 uppercase font-black cursor-pointer" id="lang-switcher">
+                <span onclick="setLang('fr')" id="l-fr" class="lang-btn px-2 py-0.5 rounded active transition-all">FR</span>
+                <span onclick="setLang('en')" id="l-en" class="lang-btn px-2 py-0.5 rounded transition-all">EN</span>
+                <span onclick="setLang('es')" id="l-es" class="lang-btn px-2 py-0.5 rounded transition-all">ES</span>
+            </div>
+        </div>
+
+        <!-- MAIN HEADER -->
+        <header class="bg-sapin text-white p-8 sticky top-0 z-50 border-b border-dore/20">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-8">
+                    <!-- LOGO IHM INTEGRATION -->
+                    <div class="logo-container">
+                        <img id="main-logo" src="logo-IHM.png" alt="IHM Logo" class="w-full h-full object-contain p-2" 
+                             onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';">
+                        <div id="logo-fallback" class="hidden flex-col items-center justify-center bg-white text-sapin h-full w-full">
+                            <span class="font-black text-xl">IHM</span>
+                            <span class="text-[8px] font-bold tracking-tighter uppercase">Immo</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="serif text-4xl text-dore tracking-wider" id="t-brand">MyCézâme</h1>
+                        <p class="text-[11px] uppercase tracking-[0.5em] text-white/40 font-bold" id="t-tagline">By IHM Immo • Prestige Concierge</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] uppercase text-dore font-black tracking-widest mb-1" id="t-potential">Potentiel Mensuel</p>
+                    <p id="total-revenue-header" class="text-4xl font-black italic text-white">0 €</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS -->
+        <nav class="bg-white/80 backdrop-blur-md border-b border-dore/20 sticky top-[132px] z-40">
+            <div class="max-w-7xl mx-auto flex">
+                <button onclick="switchTab('leads')" id="nav-leads" class="flex-1 py-6 text-[11px] font-black uppercase tracking-widest border-b-4 border-dore text-sapin transition-all flex items-center justify-center gap-3">
+                    <i data-lucide="users" class="w-4 h-4"></i> <span id="n-leads">Portefeuille Leads</span>
+                </button>
+                <button onclick="switchTab('map')" id="nav-map" class="flex-1 py-6 text-[11px] font-black uppercase tracking-widest border-b-4 border-transparent text-slate-400 transition-all flex items-center justify-center gap-3">
+                    <i data-lucide="map" class="w-4 h-4"></i> <span id="n-map">Carte Interactive</span>
+                </button>
+                <button onclick="switchTab('gains')" id="nav-gains" class="flex-1 py-6 text-[11px] font-black uppercase tracking-widest border-b-4 border-transparent text-slate-400 transition-all flex items-center justify-center gap-3">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> <span id="n-gains">Calcul des Gains</span>
+                </button>
+            </div>
+        </nav>
+
+        <main class="flex-1 p-8 md:p-12 max-w-7xl mx-auto w-full">
+            
+            <!-- ONGLET 1: LEADS -->
+            <section id="tab-leads" class="tab-content active space-y-12">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div class="lg:col-span-4 bg-white p-8 rounded-[2.5rem] border border-dore/10 shadow-2xl">
+                        <h3 class="serif text-2xl mb-8 italic text-sapin" id="f-title">Nouveau Prospect</h3>
+                        <form id="prospect-form" class="space-y-5">
+                            <div>
+                                <label class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2 block ml-2">Désignation</label>
+                                <input type="text" id="p-name" placeholder="Villa, Appartement, Client..." required class="w-full p-4 rounded-2xl border border-dore/10 bg-ivoire/50 outline-none focus:ring-2 ring-dore/20 font-bold text-sm">
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2 block ml-2">Secteur</label>
+                                <select id="p-zone" onchange="updateCitiesInForm()" class="w-full p-4 rounded-2xl border border-dore/10 bg-ivoire/50 font-bold text-sm">
+                                    <option value="Guadeloupe">Guadeloupe</option>
+                                    <option value="Martinique">Martinique</option>
+                                    <option value="Saint-Martin">Saint-Martin</option>
+                                    <option value="Guyane">Guyane</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2 block ml-2">Ville</label>
+                                <select id="p-city" class="w-full p-4 rounded-2xl border border-dore/10 bg-ivoire/50 font-bold text-sm">
+                                    <!-- JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2 block ml-2">État d'avancement</label>
+                                <select id="p-status" class="w-full p-4 rounded-2xl border border-dore/10 bg-ivoire/50 font-bold text-sm">
+                                    <option value="Signé">Contrat Signé</option>
+                                    <option value="Négo">Négociation</option>
+                                    <option value="Piste">Premier Contact</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-sapin text-dore py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:scale-[1.02] transition-all shadow-xl mt-4" id="f-btn">Ajouter le prospect</button>
+                        </form>
+                    </div>
+
+                    <div class="lg:col-span-8 bg-white rounded-[2.5rem] border border-dore/10 shadow-2xl overflow-hidden">
+                        <div class="p-6 border-b border-ivoire bg-sapin/5 flex justify-between items-center">
+                            <span class="font-black uppercase text-[10px] tracking-widest opacity-60">Liste des opportunités</span>
+                            <span id="lead-count" class="bg-dore text-white text-[10px] font-black px-3 py-1 rounded-full">2 Leads</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-sapin/5 text-sapin text-[9px] uppercase font-black tracking-widest">
+                                    <tr>
+                                        <th class="p-6">Référence</th>
+                                        <th class="p-6">Territoire</th>
+                                        <th class="p-6">Localité</th>
+                                        <th class="p-6">Statut</th>
+                                        <th class="p-6"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leads-list" class="divide-y divide-dore/5">
+                                    <!-- JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ONGLET 2: CARTE -->
+            <section id="tab-map" class="tab-content space-y-8">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-6 bg-white p-8 rounded-[2rem] border border-dore/10 shadow-xl">
+                    <div class="flex items-center gap-6">
+                        <div class="w-12 h-12 bg-sapin rounded-xl flex items-center justify-center text-dore"><i data-lucide="map-pin"></i></div>
+                        <div>
+                            <h2 class="serif text-3xl italic" id="m-title">Carte des Territoires</h2>
+                            <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest" id="m-subtitle">Sélectionnez votre zone d'intervention</p>
+                        </div>
+                    </div>
+                    <select id="map-zone-selector" onchange="renderBigMap()" class="bg-sapin text-dore p-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] outline-none cursor-pointer shadow-lg hover:bg-slate-800 transition-all">
+                        <option value="Guadeloupe">Guadeloupe (F.W.I)</option>
+                        <option value="Martinique">Martinique (Madinina)</option>
+                        <option value="Saint-Martin">Saint-Martin (SXM)</option>
+                        <option value="Guyane">Guyane Française</option>
+                    </select>
+                </div>
+
+                <div class="bg-white rounded-[4rem] p-12 border border-dore/10 shadow-2xl flex justify-center items-center min-h-[650px] relative overflow-hidden">
+                    <div id="map-container-big" class="w-full max-w-4xl transform scale-110">
+                        <!-- SVG -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ONGLET 3: GAINS -->
+            <section id="tab-gains" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div class="space-y-10">
+                        <div class="bg-white p-12 rounded-[3rem] border border-dore/10 shadow-2xl space-y-10">
+                            <h3 class="serif text-3xl italic" id="g-simulator">Simulateur de Gains</h3>
+                            
+                            <div class="space-y-10">
+                                <div>
+                                    <div class="flex justify-between mb-4">
+                                        <label class="text-[11px] font-black uppercase tracking-widest opacity-60" id="l-biens">Volume de Propriétés</label>
+                                        <span id="v-biens" class="font-black text-dore text-2xl">10</span>
+                                    </div>
+                                    <input type="range" id="s-biens" min="1" max="50" value="10" oninput="calculateGains()">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-4">
+                                        <label class="text-[11px] font-black uppercase tracking-widest opacity-60" id="l-price">Commission Moyenne / Mois (€)</label>
+                                        <span id="v-price" class="font-black text-dore text-2xl">350</span>
+                                    </div>
+                                    <input type="range" id="s-price" min="50" max="1500" step="50" value="350" oninput="calculateGains()">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-4">
+                                        <label class="text-[11px] font-black uppercase tracking-widest opacity-60" id="l-extra">Services (Ménage, Linge, Panier) (€)</label>
+                                        <span id="v-extra" class="font-black text-dore text-2xl">200</span>
+                                    </div>
+                                    <input type="range" id="s-extra" min="0" max="800" step="50" value="200" oninput="calculateGains()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-sapin p-12 rounded-[3rem] text-white shadow-2xl border-b-[12px] border-dore relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-12 opacity-5 group-hover:scale-110 transition-transform">
+                                <i data-lucide="trending-up" class="w-48 h-48"></i>
+                            </div>
+                            <h4 class="text-[11px] font-black uppercase tracking-[0.4em] text-dore mb-6" id="g-result">Chiffre d'Affaires Mensuel</h4>
+                            <div id="res-total" class="text-7xl font-black italic tracking-tighter">5 500 €</div>
+                            <p class="mt-8 text-[9px] opacity-40 uppercase font-black tracking-widest" id="g-disclaimer">Projection annuelle : <span id="res-annual" class="text-dore">66 000 €</span></p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-12 rounded-[3rem] border border-dore/10 shadow-2xl flex flex-col justify-center">
+                        <h3 class="serif text-2xl mb-12 italic text-sapin" id="g-breakdown">Répartition des Revenus</h3>
+                        <div class="space-y-16">
+                            <div class="flex items-center gap-10">
+                                <div class="w-20 h-20 bg-sapin/5 rounded-[2rem] flex items-center justify-center text-dore shadow-inner"><i data-lucide="key" class="w-8 h-8"></i></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-3 items-end">
+                                        <span class="text-[12px] font-black uppercase tracking-widest opacity-70">Honoraires Concierge</span>
+                                        <span id="br-conc" class="font-black text-xl text-sapin">3 500 €</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden border border-slate-50 shadow-inner">
+                                        <div id="bar-conc" class="bg-dore h-full transition-all duration-1000 shadow-[0_0_15px_rgba(197,160,89,0.5)]" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-10">
+                                <div class="w-20 h-20 bg-sapin/5 rounded-[2rem] flex items-center justify-center text-dore shadow-inner"><i data-lucide="star" class="w-8 h-8"></i></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-3 items-end">
+                                        <span class="text-[12px] font-black uppercase tracking-widest opacity-70">Services Premium</span>
+                                        <span id="br-extra" class="font-black text-xl text-sapin">2 000 €</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden border border-slate-50 shadow-inner">
+                                        <div id="bar-extra" class="bg-sapin h-full transition-all duration-1000 shadow-[0_0_15px_rgba(26,58,50,0.5)]" style="width: 40%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        const TXT = {
+            fr: {
+                brand: "MyCézâme", tagline: "By IHM Immo • L'Excellence Opérationnelle", potential: "Potentiel Mensuel",
+                nLeads: "Portefeuille Leads", nMap: "Carte Interactive", nGains: "Calcul des Gains",
+                fTitle: "Nouveau Prospect", fBtn: "Ajouter le prospect",
+                mTitle: "Carte des Territoires", mSubtitle: "Sélectionnez votre zone d'intervention",
+                gSimulator: "Simulateur de Gains", lBiens: "Volume de Propriétés", lPrice: "Commission Moyenne / Mois (€)",
+                lExtra: "Services (Ménage, Linge, Panier) (€)", gResult: "Chiffre d'Affaires Mensuel", gDisclaimer: "Projection annuelle : ",
+                gBreakdown: "Répartition des Revenus"
+            },
+            en: {
+                brand: "MyCezame", tagline: "By IHM Immo • Operational Excellence", potential: "Monthly Potential",
+                nLeads: "Lead Portfolio", nMap: "Interactive Map", nGains: "Earnings Calculator",
+                fTitle: "New Prospect", fBtn: "Add Prospect",
+                mTitle: "Territory Map", mSubtitle: "Select your intervention zone",
+                gSimulator: "Gains Simulator", lBiens: "Property Volume", lPrice: "Average Monthly Fee (€)",
+                lExtra: "Services (Cleaning, Laundry) (€)", gResult: "Monthly Turnover", gDisclaimer: "Annual projection: ",
+                gBreakdown: "Revenue Breakdown"
+            },
+            es: {
+                brand: "MyCézâme", tagline: "Por IHM Immo • Excelencia Operativa", potential: "Potencial Mensual",
+                nLeads: "Cartera de Leads", nMap: "Mapa Interactivo", nGains: "Cálculo de Ganancias",
+                fTitle: "Nuevo Prospecto", fBtn: "Añadir Prospecto",
+                mTitle: "Mapa de Territorios", mSubtitle: "Seleccione su zona de intervención",
+                gSimulator: "Simulador de Ganancias", lBiens: "Volumen de Propiedades", lPrice: "Comisión Mensual Promedio (€)",
+                lExtra: "Servicios (Limpieza, Lavandería) (€)", gResult: "Volumen de Negocio Mensual", gDisclaimer: "Proyección anual: ",
+                gBreakdown: "Desglose de Ingresos"
+            }
+        };
+
+        const SECTORS = {
+            'Guadeloupe': ['Saint-François', 'Sainte-Anne', 'Le Gosier', 'Basse-Terre', 'Baie-Mahault', 'Le Moule', 'Saint-Louis', 'Grand-Bourg'],
+            'Martinique': ['Le Marin', 'Fort-de-France', 'Les Trois-Ilets', 'Sainte-Luce', 'Le Robert', 'Saint-Pierre', 'Anses-d\'Arlet'],
+            'Saint-Martin': ['Marigot', 'Grand-Case', 'Baie Orientale', 'Terres Basses', 'Cul-de-Sac', 'Anse Marcel', 'Oyster Pond'],
+            'Guyane': ['Cayenne', 'Kourou', 'Saint-Laurent', 'Remire-Montjoly', 'Matoury']
+        };
+
+        const MAPS = {
+            'Guadeloupe': `<path class="land" d="M110,40 C90,30 50,45 45,90 C40,135 60,180 85,200 C105,220 130,190 130,140 C130,100 135,60 110,40 Z M150,95 C155,65 185,45 230,50 C270,55 285,100 275,130 C265,160 230,175 190,180 C165,180 150,140 150,95 Z" />`,
+            'Martinique': `<path class="land" d="M120,30 C150,45 190,75 210,135 C230,195 240,250 200,290 C170,325 120,335 90,300 C60,270 55,200 65,140 C75,80 95,40 120,30 Z" />`,
+            'Saint-Martin': `<path class="land" d="M40,100 L110,40 L240,60 L280,120 L240,180 L140,200 L60,180 Z" />`,
+            'Guyane': `<path class="land" d="M40,70 L160,30 L260,80 L280,200 L220,280 L100,290 L40,240 Z" />`
+        };
+
+        const COORDS = {
+            'Saint-François': [260, 115], 'Sainte-Anne': [220, 140], 'Le Gosier': [180, 150], 'Basse-Terre': [70, 185],
+            'Le Marin': [195, 275], 'Fort-de-France': [100, 160], 'Les Trois-Ilets': [130, 210],
+            'Marigot': [90, 110], 'Grand-Case': [180, 70], 'Baie Orientale': [240, 95], 'Terres Basses': [50, 130],
+            'Cayenne': [220, 85], 'Kourou': [150, 60]
+        };
+
+        let leads = JSON.parse(localStorage.getItem('cezame_ihm_v12')) || [
+            { id: 1, name: "Villa IHM Prestige", zone: "Saint-Martin", city: "Baie Orientale", status: "Signé" },
+            { id: 2, name: "Appartement Marina", zone: "Guadeloupe", city: "Saint-François", status: "Négo" }
+        ];
+
+        function setLang(l) {
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('l-' + l).classList.add('active');
+            const T = TXT[l];
+            document.getElementById('t-brand').innerText = T.brand;
+            document.getElementById('t-tagline').innerText = T.tagline;
+            document.getElementById('t-potential').innerText = T.potential;
+            document.getElementById('n-leads').innerText = T.nLeads;
+            document.getElementById('n-map').innerText = T.nMap;
+            document.getElementById('n-gains').innerText = T.nGains;
+            document.getElementById('f-title').innerText = T.fTitle;
+            document.getElementById('f-btn').innerText = T.fBtn;
+            document.getElementById('m-title').innerText = T.mTitle;
+            document.getElementById('m-subtitle').innerText = T.mSubtitle;
+            document.getElementById('g-simulator').innerText = T.gSimulator;
+            document.getElementById('l-biens').innerText = T.lBiens;
+            document.getElementById('l-price').innerText = T.lPrice;
+            document.getElementById('l-extra').innerText = T.lExtra;
+            document.getElementById('g-result').innerText = T.gResult;
+            document.getElementById('g-disclaimer').innerHTML = T.gDisclaimer + ' <span id="res-annual" class="text-dore"></span>';
+            document.getElementById('g-breakdown').innerText = T.gBreakdown;
+            calculateGains();
+        }
+
+        function switchTab(t) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + t).classList.add('active');
+            document.querySelectorAll('nav button').forEach(b => {
+                b.classList.remove('border-dore', 'text-sapin');
+                b.classList.add('border-transparent', 'text-slate-400');
+            });
+            document.getElementById('nav-' + t).classList.add('border-dore', 'text-sapin');
+            if(t === 'map') renderBigMap();
+            if(t === 'leads') renderLeads();
+        }
+
+        function updateCitiesInForm() {
+            const zone = document.getElementById('p-zone').value;
+            const select = document.getElementById('p-city');
+            select.innerHTML = '';
+            SECTORS[zone].forEach(c => {
+                const o = document.createElement('option');
+                o.value = c; o.innerText = c;
+                select.appendChild(o);
+            });
+        }
+
+        function calculateGains() {
+            const b = parseInt(document.getElementById('s-biens').value);
+            const p = parseInt(document.getElementById('s-price').value);
+            const e = parseInt(document.getElementById('s-extra').value);
+
+            document.getElementById('v-biens').innerText = b;
+            document.getElementById('v-price').innerText = p;
+            document.getElementById('v-extra').innerText = e;
+
+            const tConc = b * p;
+            const tExtra = b * e;
+            const total = tConc + tExtra;
+
+            document.getElementById('res-total').innerText = total.toLocaleString() + " €";
+            document.getElementById('total-revenue-header').innerText = total.toLocaleString() + " €";
+            document.getElementById('res-annual').innerText = (total * 12).toLocaleString() + " €";
+            document.getElementById('br-conc').innerText = tConc.toLocaleString() + " €";
+            document.getElementById('br-extra').innerText = tExtra.toLocaleString() + " €";
+
+            const pC = total > 0 ? (tConc / total) * 100 : 0;
+            const pE = total > 0 ? (tExtra / total) * 100 : 0;
+            document.getElementById('bar-conc').style.width = pC + "%";
+            document.getElementById('bar-extra').style.width = pE + "%";
+        }
+
+        function renderLeads() {
+            const body = document.getElementById('leads-list');
+            body.innerHTML = '';
+            leads.forEach(l => {
+                const badge = l.status === 'Signé' ? 'bg-emerald-100 text-emerald-700' : l.status === 'Négo' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700';
+                body.innerHTML += `
+                    <tr class="hover:bg-ivoire/30 transition-all border-b border-ivoire">
+                        <td class="p-6 font-bold text-sapin">${l.name}</td>
+                        <td class="p-6 text-[10px] font-black uppercase opacity-50">${l.zone}</td>
+                        <td class="p-6 font-bold text-sapin/80">${l.city}</td>
+                        <td class="p-6"><span class="px-3 py-1 rounded-full text-[9px] font-black uppercase ${badge}">${l.status}</span></td>
+                        <td class="p-6 text-right">
+                            <button onclick="delLead(${l.id})" class="text-rose-200 hover:text-rose-600 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('lead-count').innerText = leads.length + " Leads";
+            lucide.createIcons();
+        }
+
+        function renderBigMap() {
+            const z = document.getElementById('map-zone-selector').value;
+            const c = document.getElementById('map-container-big');
+            const vB = z === 'Martinique' ? "0 0 300 350" : (z === 'Guadeloupe' ? "0 0 320 250" : "0 0 350 350");
+            
+            let svg = `<svg viewBox="${vB}" class="w-full h-auto drop-shadow-2xl">`;
+            svg += MAPS[z];
+
+            const zLeads = leads.filter(l => l.zone === z);
+
+            SECTORS[z].forEach(cityName => {
+                const coords = COORDS[cityName];
+                if(coords) {
+                    const cLeads = zLeads.filter(zl => zl.city === cityName);
+                    const color = cLeads.some(cl => cl.status === 'Signé') ? '#10b981' : (cLeads.length > 0 ? '#0ea5e9' : '#e2e8f0');
+                    const r = 6 + (cLeads.length * 4);
+                    
+                    svg += `
+                        <circle class="city-dot" cx="${coords[0]}" cy="${coords[1]}" r="${r}" fill="${color}" stroke="white" stroke-width="2.5"
+                            onmouseover="showToolTip(event, '${cityName}', ${cLeads.length})" onmouseout="hideToolTip()" />
+                    `;
+                }
+            });
+            svg += `</svg>`;
+            c.innerHTML = svg;
+        }
+
+        function showToolTip(e, n, c) {
+            const t = document.getElementById('tooltip');
+            t.innerHTML = `<b>${n}</b><br>${c} lead(s)`;
+            t.style.display = 'block';
+            t.style.left = (e.pageX + 15) + 'px';
+            t.style.top = (e.pageY + 15) + 'px';
+        }
+
+        function hideToolTip() { document.getElementById('tooltip').style.display = 'none'; }
+
+        function delLead(id) {
+            leads = leads.filter(l => l.id !== id);
+            localStorage.setItem('cezame_ihm_v12', JSON.stringify(leads));
+            renderLeads();
+            renderBigMap();
+        }
+
+        document.getElementById('prospect-form').onsubmit = function(e) {
+            e.preventDefault();
+            leads.push({
+                id: Date.now(),
+                name: document.getElementById('p-name').value,
+                zone: document.getElementById('p-zone').value,
+                city: document.getElementById('p-city').value,
+                status: document.getElementById('p-status').value
+            });
+            localStorage.setItem('cezame_ihm_v12', JSON.stringify(leads));
+            renderLeads();
+            this.reset();
+            updateCitiesInForm();
+        };
+
+        window.onload = () => {
+            lucide.createIcons();
+            updateCitiesInForm();
+            renderLeads();
+            calculateGains();
+            setLang('fr');
+        };
+    </script>
+</body>
+</html>
